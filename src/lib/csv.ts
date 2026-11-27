@@ -12,11 +12,21 @@ export function parseCsvContent(rawCsv: string): ParsedCsvDocument {
     dynamicTyping: false,
   });
 
+  // A missing closing quote can make PapaParse absorb later rows into one cell.
+  // Reject that input instead of letting the user review a misleading preview.
+  const quoteError = result.errors.find(
+    (error) => error.code === 'MissingQuotes' || error.code === 'InvalidQuotes'
+  );
+  if (quoteError) {
+    throw new Error(`Invalid CSV quoting: ${quoteError.message}`);
+  }
   if (result.errors.length > 0 && result.data.length === 0) {
     throw new Error(result.errors[0].message || 'Could not parse CSV file.');
   }
 
-  const rows = result.data;
+  // Work on our own rows; never mutate the parser's result while trimming the
+  // optional record created by a trailing newline.
+  const rows = result.data.map((row) => [...row]);
   if (
     rows.length > 1 &&
     rows[rows.length - 1].length === 1 &&

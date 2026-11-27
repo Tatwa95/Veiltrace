@@ -290,7 +290,14 @@ export function SanitizeWorkspace({
         }
       }
 
-      const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+      // A lossy decode can alter an identifier before detection. Fail clearly
+      // so users can re-export the file as UTF-8 instead of trusting a partial scan.
+      let decoded: string;
+      try {
+        decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch {
+        throw new Error('This file is not valid UTF-8. Re-save it as UTF-8 and upload it again.');
+      }
       if (isCsv) {
         parseCsvContent(decoded);
       }

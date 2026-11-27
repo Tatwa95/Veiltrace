@@ -333,8 +333,10 @@ button {
 
 .hero-eyebrow {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
+  max-width: 100%;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
@@ -363,6 +365,7 @@ button {
   display: flex;
   align-items: flex-start;
   gap: 0.65rem;
+  min-width: 0;
   padding: 0.85rem 1rem;
   background-color: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
@@ -370,6 +373,10 @@ button {
   font-size: 0.925rem;
   color: var(--text-secondary);
   margin-bottom: 1.35rem;
+}
+
+.hero-note > span {
+  min-width: 0;
 }
 
 .hero-actions {

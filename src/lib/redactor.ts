@@ -115,9 +115,20 @@ export function buildRedactedSegments(
     return { text: '', segments: [] };
   }
 
+  // Validate offsets at the final replacement boundary as well as in the
+  // detector. This prevents malformed ranges from corrupting output or
+  // silently leaving text unredacted if another caller supplies detections.
   const active = detections
-    .filter((d) => d.included)
-    .sort((a, b) => a.start - b.start);
+    .filter(
+      (d) =>
+        d.included &&
+        Number.isInteger(d.start) &&
+        Number.isInteger(d.end) &&
+        d.start >= 0 &&
+        d.end > d.start &&
+        d.end <= originalText.length
+    )
+    .sort((a, b) => a.start - b.start || b.end - a.end || a.id.localeCompare(b.id));
 
   if (active.length === 0) {
     return {

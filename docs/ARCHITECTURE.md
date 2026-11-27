@@ -194,7 +194,7 @@ Veiltrace/
 ---
 
 ### 5.5 CSV Pipeline (`src/lib/csv.ts`)
-- **`parseCsvContent(rawCsv: string): ParsedCsvDocument`**: Uses `Papa.parse` (`header: false`, `skipEmptyLines: false`, `dynamicTyping: false`), detects `\r\n` vs `\n`, trims trailing empty EOF line artifact, and preserves delimiter metadata.
+- **`parseCsvContent(rawCsv: string): ParsedCsvDocument`**: Uses `Papa.parse` (`header: false`, `skipEmptyLines: false`, `dynamicTyping: false`), rejects unmatched quotes that could merge later rows into a cell, detects `\r\n` vs `\n`, trims the trailing empty EOF row on a cloned matrix, and preserves delimiter metadata.
 - **`detectCsvDocument(doc, customTerms, existingExclusions): Detection[]`**: Iterates every row/column cell and invokes `detectSensitiveData()` with `rowIndex`, `colIndex`, and `columnHeader` context.
 - **`redactCsvDocument(doc, detections, mode, registry)`**: Groups detections by `(rowIndex, colIndex)`, redacts each cell using a shared document-level `PseudonymRegistry`, and serializes back to valid RFC 4180 CSV via `Papa.unparse` (`quotes: false`, `escapeChar: '"'`, `quoteChar: '"'`), preserving commas, escaped quotes (`""`), and embedded newlines.
 
@@ -211,7 +211,7 @@ Veiltrace/
 - **`Navbar.tsx`**: Sticky monochrome header with geometric shield mark, `Sanitize` / `How It Works` / `Prompt Log` / `About` navigation, `Local processing` status pill, and collapsible mobile menu.
 - **`WelcomeHero.tsx`**: Headline, `.txt`/`.csv`-only browser-processing notice, and quick-start buttons (`Paste text`, `Upload .txt or .csv`, `Try sample`, `Try CSV sample`).
 - **`SanitizeWorkspace.tsx`**:
-  - Step 1: Drag-and-drop + file input (`.txt`/`.csv`, `MAX_FILE_BYTES = 5 MB`, null-byte binary check via `Uint8Array`), editable textarea, `Remove file`, and `Clear data` confirmation dialog (`Escape` support).
+  - Step 1: Drag-and-drop + file input (`.txt`/`.csv`, `MAX_FILE_BYTES = 5 MB`, null-byte binary check, strict UTF-8 decode), editable textarea, `Remove file`, and `Clear data` confirmation dialog (`Escape` support).
   - Pre-scan / Out-of-date gating: Hides results prior to scan; computes `isOutOfDate` when `rawInput !== scanSnapshot.text` and displays **Scan again**.
   - Step 2: Summary cards, **Temporary custom terms** panel with confirmation status, keyboard-operable mode `radiogroup` (`ArrowLeft`/`ArrowRight`), side-by-side `Highlighted Original` (click-to-inspect details) and shaded `Sanitized Output`, CSV `Table view`/`Raw CSV` toggle, `Copy sanitized output`, `Download sanitized file` (with `URL.revokeObjectURL`), **What Changed** guidance, and collapsible **Review findings**.
 - **`HowItWorksView.tsx`**, **`PromptLogView.tsx`**, **`AboutView.tsx`**: Privacy architecture explanation, truthful prompt history, format matrix, limitations, and Challenge Checklist.
@@ -226,5 +226,7 @@ Veiltrace/
 | Referrer & permissions | `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`. |
 | Zero persistence | No `localStorage`, `sessionStorage`, `IndexedDB`, cookies, URL query encoding, or `console.log` of user inputs. |
 | XSS / HTML injection defense | File contents and CSV cells are rendered exclusively through React text nodes—never `dangerouslySetInnerHTML`. |
+| Input integrity | Binary-like files are rejected; invalid UTF-8 and CSV unmatched-quote inputs produce actionable errors instead of being scanned as altered or structurally misleading text. |
+| Redaction range safety | The final redaction pass accepts only integer, positive, in-bounds spans and resolves same-start overlaps deterministically before assembling output. |
 | Memory cleanup | Temporary object URLs created for downloads are revoked after `1000ms` via `URL.revokeObjectURL`; `Clear data` wipes all working state. |
 | Cache hygiene | `/`, `/index.html` serve `Cache-Control: no-cache, no-store, must-revalidate`; hashed `/assets/**` serve `immutable` 1-year cache. |

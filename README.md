@@ -9,6 +9,12 @@
 
 VeilTrace is a client-side single-page web application built with **Google Antigravity** and deployed on **Firebase Hosting** for the Google PromptWars challenge. It helps people—including non-technical users and older adults—inspect pasted text or `.txt` and `.csv` files locally in their browser for likely sensitive information, review plain-language explanations, redact matches, and download a safer copy.
 
+## Screenshots
+
+The screenshot shows the desktop input workspace with no document loaded. No user documents or personal data are included.
+
+![VeilTrace desktop input workspace](docs/screenshots/overview.png)
+
 ---
 
 ## Supported Formats (`.txt` and `.csv` Only)
