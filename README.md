@@ -54,6 +54,40 @@ Image sanitization, PDF extraction, Word (`.docx`) parsing, browser-local OCR, a
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full architecture diagrams, data flow sequences, and function-level documentation.
 
+### Runtime Architecture
+
+Firebase Hosting delivers the static application bundle. After the page loads, the browser handles the complete sanitization workflow locally; the app does not send uploaded content to a processing service.
+
+```mermaid
+flowchart LR
+  H["Firebase Hosting<br/>Static HTML, CSS, JS"] --> B["User browser<br/>React application"]
+  U[Paste text or choose .txt/.csv] --> I[In-memory input state]
+  B --> I
+  I --> P{Input type}
+  P -->|Text| D[Pattern detection]
+  P -->|CSV| C[Parse CSV cells]
+  C --> D
+  D --> V[Validation and overlap resolution]
+  V --> R[User review and include/exclude]
+  R --> M[Redaction mode]
+  M --> O[Sanitized preview]
+  O --> X[Browser copy or download]
+```
+
+**Trust boundary:** Hosting serves the app code; file contents, custom terms, detection results, and pseudonym mappings remain in browser memory. Downloads are created locally from the sanitized result. There is no application backend, database, analytics pipeline, or AI API in the data path.
+
+### Processing Sequence
+
+1. The user pastes content or selects a supported `.txt` or `.csv` file.
+2. The app validates the file and keeps its contents in browser memory.
+3. Text is scanned directly; CSV is parsed into cells and scanned cell by cell.
+4. Deterministic detectors validate candidates, then resolve overlapping matches.
+5. The user reviews findings, adds optional session-only terms, and chooses which detections to redact.
+6. The redaction engine produces the preview from the original input offsets and selected mode.
+7. Copy and download actions use the sanitized output; CSV output is serialized back into CSV format.
+
+For the module map, function reference, sequence diagram, and security controls, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 | Module | Purpose | Key Exports |
 |---|---|---|
 | [src/types/veiltrace.ts](src/types/veiltrace.ts) | Core domain types | `EntityType`, `RedactionMode`, `Detection`, `CustomTerm`, `ParsedCsvDocument` |
