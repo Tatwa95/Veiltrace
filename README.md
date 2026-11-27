@@ -3,8 +3,10 @@
 **Private Data Sanitization & Provenance Workbench**  
 *Find what’s sensitive. Redact it locally. Share with confidence.*
 
-**Live App (Firebase Hosting):** https://veiltrace-d05ac.web.app/  
-**Architecture & Function Reference:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)  
+**Deployed app (Firebase Hosting):** [Open VeilTrace](https://veiltrace-d05ac.web.app/)
+
+**Architecture & Function Reference:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
 **Development Prompt Log:** [PROMPT_LOG.md](PROMPT_LOG.md)
 
 VeilTrace is a client-side single-page web application built with **Google Antigravity** and deployed on **Firebase Hosting** for the Google PromptWars challenge. It helps people—including non-technical users and older adults—inspect pasted text or `.txt` and `.csv` files locally in their browser for likely sensitive information, review plain-language explanations, redact matches, and download a safer copy.
