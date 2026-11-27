@@ -230,3 +230,15 @@ Veiltrace/
 | Redaction range safety | The final redaction pass accepts only integer, positive, in-bounds spans and resolves same-start overlaps deterministically before assembling output. |
 | Memory cleanup | Temporary object URLs created for downloads are revoked after `1000ms` via `URL.revokeObjectURL`; `Clear data` wipes all working state. |
 | Cache hygiene | `/`, `/index.html` serve `Cache-Control: no-cache, no-store, must-revalidate`; hashed `/assets/**` serve `immutable` 1-year cache. |
+
+---
+
+## 7. Automated Quality Checks
+
+Vitest unit tests exercise the pure processing modules in `src/lib` without making network calls or loading real user data. Coverage is measured with V8 and enforced at 80% lines, 75% statements, 60% branches, and 90% functions. GitHub Actions runs the coverage suite and production build on pushes and pull requests to `main`.
+
+```bash
+npm test
+npm run test:coverage
+npm run build
+```

@@ -166,6 +166,19 @@ npm run build
 npm run preview
 ```
 
+## Automated Quality Checks
+
+VeilTrace uses **Vitest** for deterministic unit tests over its privacy-critical logic: PII and network-address detection, Luhn card validation, redaction modes, pseudonym consistency, CSV quoting and embedded newlines, and plain-language guidance. Coverage is measured for `src/lib` with enforced minimums of 80% lines, 75% statements, 60% branches, and 90% functions.
+
+```bash
+npm test                 # Run the suite once
+npm run test:watch       # Watch while developing
+npm run test:coverage    # Run tests and print an HTML/text coverage report
+npm run build            # Type-check and create the production bundle
+```
+
+GitHub Actions runs coverage and the production build for pushes and pull requests targeting `main`: [Quality checks workflow](.github/workflows/quality.yml).
+
 ### Deploy to Firebase Hosting
 `firebase.json` and `.firebaserc` are configured for static hosting from `dist/`:
 ```bash
