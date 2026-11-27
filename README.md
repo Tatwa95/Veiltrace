@@ -98,7 +98,8 @@ For the module map, function reference, sequence diagram, and security controls,
 
 | Module | Purpose | Key Exports |
 |---|---|---|
-| [src/types/veiltrace.ts](src/types/veiltrace.ts) | Core domain types | `EntityType`, `RedactionMode`, `Detection`, `CustomTerm`, `ParsedCsvDocument` |
+| [src/types/veiltrace.ts](src/types/veiltrace.ts) | Shared domain contracts | `EntityType`, `RedactionMode`, `ScanSnapshot`, `Detection`, `CustomTerm`, `ParsedCsvDocument` |
+| [src/hooks/useSanitizationResults.ts](src/hooks/useSanitizationResults.ts) | Derived scan state and output calculations, isolated from workspace rendering | `useSanitizationResults` |
 | [src/lib/luhn.ts](src/lib/luhn.ts) | Payment card checksum validator | `passesLuhnCheck` |
 | [src/lib/detector.ts](src/lib/detector.ts) | Pattern extractors, validators, overlap solver | `detectSensitiveData`, `ENTITY_META`, `ALL_ENTITY_TYPES` |
 | [src/lib/redactor.ts](src/lib/redactor.ts) | Single-pass offset redaction & pseudonyms | `PseudonymRegistry`, `maskPartial`, `formatReplacement`, `buildRedactedSegments`, `applyRedactionsToText` |

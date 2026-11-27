@@ -10,6 +10,13 @@ export type EntityType =
 
 export type RedactionMode = 'full' | 'partial' | 'pseudonym';
 
+export interface ScanSnapshot {
+  text: string;
+  kind: 'text' | 'csv';
+  sourceName: string;
+  sizeBytes: number | null;
+}
+
 export type ConfidenceLabel = 'Pattern match' | 'Review recommended' | 'Passes Luhn check';
 
 export interface Detection {

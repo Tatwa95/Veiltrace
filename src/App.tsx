@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AppTab, CustomTerm, RedactionMode } from './types/veiltrace';
+import type { AppTab, CustomTerm, RedactionMode, ScanSnapshot } from './types/veiltrace';
 import { Navbar } from './components/Navbar';
 import { WelcomeHero } from './components/WelcomeHero';
 import { SanitizeWorkspace } from './components/SanitizeWorkspace';
@@ -13,13 +13,6 @@ import {
   SYNTHETIC_SAMPLE_TEXT,
 } from './lib/sampleData';
 
-export interface ScanSnapshot {
-  text: string;
-  kind: 'text' | 'csv';
-  sourceName: string;
-  sizeBytes: number | null;
-}
-
 export function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('sanitize');
   const [rawInput, setRawInput] = useState('');
@@ -30,7 +23,6 @@ export function App() {
   const [customTerms, setCustomTerms] = useState<CustomTerm[]>([]);
   const [exclusions, setExclusions] = useState<Map<string, boolean>>(new Map());
   const [scanSnapshot, setScanSnapshot] = useState<ScanSnapshot | null>(null);
-  const [mappingEpoch, setMappingEpoch] = useState(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +49,6 @@ export function App() {
     setSourceSizeBytes(new Blob([SYNTHETIC_SAMPLE_TEXT]).size);
     setExclusions(new Map());
     setScanSnapshot(null);
-    setMappingEpoch((e) => e + 1);
     setRawInput(SYNTHETIC_SAMPLE_TEXT);
   };
 
@@ -68,7 +59,6 @@ export function App() {
     setSourceSizeBytes(new Blob([SYNTHETIC_SAMPLE_CSV]).size);
     setExclusions(new Map());
     setScanSnapshot(null);
-    setMappingEpoch((e) => e + 1);
     setRawInput(SYNTHETIC_SAMPLE_CSV);
   };
 
@@ -103,8 +93,6 @@ export function App() {
                 setExclusions={setExclusions}
                 scanSnapshot={scanSnapshot}
                 setScanSnapshot={setScanSnapshot}
-                mappingEpoch={mappingEpoch}
-                setMappingEpoch={setMappingEpoch}
                 textareaRef={textareaRef}
                 fileInputRef={fileInputRef}
               />

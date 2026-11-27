@@ -20,18 +20,17 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { ScanSnapshot } from '../App';
-import {
+import type {
   CustomTerm,
   Detection,
   EntityType,
-  ParsedCsvDocument,
   RedactionMode,
+  ScanSnapshot,
 } from '../types/veiltrace';
-import { ALL_ENTITY_TYPES, detectSensitiveData, ENTITY_META } from '../lib/detector';
-import { buildRedactedSegments, OutputSegment, PseudonymRegistry } from '../lib/redactor';
-import { detectCsvDocument, parseCsvContent, redactCsvDocument } from '../lib/csv';
-import { buildGuidanceStatements, buildScanSummarySentence } from '../lib/guidance';
+import { ALL_ENTITY_TYPES, ENTITY_META } from '../lib/detector';
+import type { OutputSegment } from '../lib/redactor';
+import { parseCsvContent } from '../lib/csv';
+import { useSanitizationResults } from '../hooks/useSanitizationResults';
 import {
   SAMPLE_CSV_FILE_NAME,
   SAMPLE_FILE_NAME,
@@ -59,8 +58,6 @@ interface SanitizeWorkspaceProps {
   setExclusions: (map: Map<string, boolean>) => void;
   scanSnapshot: ScanSnapshot | null;
   setScanSnapshot: (snapshot: ScanSnapshot | null) => void;
-  mappingEpoch: number;
-  setMappingEpoch: (updater: (prev: number) => number) => void;
   textareaRef: RefObject<HTMLTextAreaElement>;
   fileInputRef: RefObject<HTMLInputElement>;
 }
@@ -189,8 +186,6 @@ export function SanitizeWorkspace({
   setExclusions,
   scanSnapshot,
   setScanSnapshot,
-  mappingEpoch,
-  setMappingEpoch,
   textareaRef,
   fileInputRef,
 }: SanitizeWorkspaceProps) {
@@ -230,7 +225,6 @@ export function SanitizeWorkspace({
     setExclusions(new Map());
     setScanSnapshot(null);
     setSelectedDetectionId(null);
-    setMappingEpoch((e) => e + 1);
     setRawInput(SYNTHETIC_SAMPLE_TEXT);
     setStatusMessage('Loaded synthetic sample text. Select Scan and redact to inspect.');
   };
@@ -244,7 +238,6 @@ export function SanitizeWorkspace({
     setExclusions(new Map());
     setScanSnapshot(null);
     setSelectedDetectionId(null);
-    setMappingEpoch((e) => e + 1);
     setRawInput(SYNTHETIC_SAMPLE_CSV);
     setCsvViewMode('table');
     setStatusMessage('Loaded synthetic CSV sample. Select Scan and redact to inspect.');
@@ -308,7 +301,6 @@ export function SanitizeWorkspace({
       setExclusions(new Map());
       setScanSnapshot(null);
       setSelectedDetectionId(null);
-      setMappingEpoch((e) => e + 1);
       setRawInput(decoded);
       if (isCsv) setCsvViewMode('table');
       setStatusMessage(
@@ -346,7 +338,6 @@ export function SanitizeWorkspace({
     setFileError(null);
     setSelectedDetectionId(null);
     setExclusions(new Map());
-    setMappingEpoch((e) => e + 1);
     setScanSnapshot({
       text: rawInput,
       kind: sourceKind,
@@ -365,117 +356,29 @@ export function SanitizeWorkspace({
     scanSnapshot !== null &&
     (rawInput !== scanSnapshot.text || sourceKind !== scanSnapshot.kind);
 
-  const parsedCsv = useMemo<{ doc: ParsedCsvDocument | null; error: string | null }>(() => {
-    if (!scanSnapshot || scanSnapshot.kind !== 'csv' || !scanSnapshot.text) {
-      return { doc: null, error: null };
-    }
-    try {
-      return { doc: parseCsvContent(scanSnapshot.text), error: null };
-    } catch (err) {
-      return {
-        doc: null,
-        error: err instanceof Error ? err.message : 'CSV structure could not be parsed.',
-      };
-    }
-  }, [scanSnapshot]);
-
-  const detections = useMemo<Detection[]>(() => {
-    if (!scanSnapshot || !scanSnapshot.text) return [];
-    if (scanSnapshot.kind === 'csv' && parsedCsv.doc) {
-      return detectCsvDocument(parsedCsv.doc, customTerms, exclusions);
-    }
-    return detectSensitiveData(scanSnapshot.text, customTerms, exclusions);
-  }, [scanSnapshot, parsedCsv.doc, customTerms, exclusions]);
-
   const {
+    parsedCsv,
+    detections,
     sanitizedOutput,
     sanitizedSegments,
     sanitizedCsvRowSegments,
     pseudonymMappings,
-  } = useMemo(() => {
-    void mappingEpoch;
-    const registry = new PseudonymRegistry();
-
-    if (!scanSnapshot || !scanSnapshot.text) {
-      return {
-        sanitizedOutput: '',
-        sanitizedSegments: [] as OutputSegment[],
-        sanitizedCsvRowSegments: [] as OutputSegment[][][],
-        pseudonymMappings: [] as Array<{ type: EntityType; normalizedValue: string; token: string }>,
-      };
-    }
-
-    if (scanSnapshot.kind === 'csv' && parsedCsv.doc) {
-      const { sanitizedRowSegments, serializedCsv } = redactCsvDocument(
-        parsedCsv.doc,
-        detections,
-        mode,
-        registry
-      );
-      return {
-        sanitizedOutput: serializedCsv,
-        sanitizedSegments: [] as OutputSegment[],
-        sanitizedCsvRowSegments: sanitizedRowSegments,
-        pseudonymMappings: registry.getSummary(),
-      };
-    }
-
-    const res = buildRedactedSegments(scanSnapshot.text, detections, mode, registry);
-    return {
-      sanitizedOutput: res.text,
-      sanitizedSegments: res.segments,
-      sanitizedCsvRowSegments: [] as OutputSegment[][][],
-      pseudonymMappings: registry.getSummary(),
-    };
-  }, [scanSnapshot, parsedCsv.doc, detections, mode, mappingEpoch]);
-
-  const stats = useMemo(() => {
-    const byType = new Map<EntityType, { total: number; included: number; excluded: number }>();
-    for (const type of ALL_ENTITY_TYPES) {
-      byType.set(type, { total: 0, included: 0, excluded: 0 });
-    }
-    let includedCount = 0;
-    let excludedCount = 0;
-
-    for (const det of detections) {
-      const entry = byType.get(det.type)!;
-      entry.total += 1;
-      if (det.included) {
-        entry.included += 1;
-        includedCount += 1;
-      } else {
-        entry.excluded += 1;
-        excludedCount += 1;
-      }
-    }
-
-    return {
-      total: detections.length,
-      included: includedCount,
-      excluded: excludedCount,
-      byType,
-    };
-  }, [detections]);
-
-  const summarySentence = useMemo(
-    () => buildScanSummarySentence(detections),
-    [detections]
-  );
-
-  const guidanceLines = useMemo(
-    () => buildGuidanceStatements(detections, mode),
-    [detections, mode]
-  );
-
+    stats,
+    summarySentence,
+    guidanceLines,
+    filteredDetections,
+    csvDetectionsByCell,
+  } = useSanitizationResults({
+    snapshot: scanSnapshot,
+    customTerms,
+    exclusions,
+    mode,
+    typeFilter,
+  });
   const selectedDetection = useMemo(
     () => detections.find((d) => d.id === selectedDetectionId) ?? null,
     [detections, selectedDetectionId]
   );
-
-  const filteredDetections = useMemo(() => {
-    if (typeFilter === 'ALL') return detections;
-    return detections.filter((d) => d.type === typeFilter);
-  }, [detections, typeFilter]);
 
   const toggleDetection = (id: string) => {
     const current = detections.find((d) => d.id === id);
@@ -527,7 +430,6 @@ export function SanitizeWorkspace({
   const handleResetMappings = () => {
     setExclusions(new Map());
     setSelectedDetectionId(null);
-    setMappingEpoch((e) => e + 1);
     setStatusMessage('Reset pseudonym mappings and finding exclusions for this document.');
   };
 
@@ -539,7 +441,6 @@ export function SanitizeWorkspace({
     setExclusions(new Map());
     setScanSnapshot(null);
     setSelectedDetectionId(null);
-    setMappingEpoch((e) => e + 1);
     setRawInput('');
     setStatusMessage('Removed loaded file and cleared input.');
   };
@@ -556,7 +457,6 @@ export function SanitizeWorkspace({
     setSelectedDetectionId(null);
     setFileError(null);
     setTypeFilter('ALL');
-    setMappingEpoch((e) => e + 1);
     setConfirmClearOpen(false);
     setStatusMessage('Cleared all working data and custom terms from browser memory.');
   };
@@ -618,17 +518,6 @@ export function SanitizeWorkspace({
       modeCardRefs.current[targetMode]?.focus();
     }
   };
-
-  const csvDetectionsByCell = useMemo(() => {
-    const map = new Map<string, Detection[]>();
-    for (const det of detections) {
-      const key = `${det.rowIndex ?? 0}:${det.colIndex ?? 0}`;
-      const arr = map.get(key) ?? [];
-      arr.push(det);
-      map.set(key, arr);
-    }
-    return map;
-  }, [detections]);
 
   const hasRawInput = rawInput.trim().length > 0;
 

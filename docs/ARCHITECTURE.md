@@ -106,6 +106,8 @@ Veiltrace/
     ├── index.css                   # Editorial monochrome design tokens & responsive layout
     ├── types/
     │   └── veiltrace.ts            # Core TypeScript domain types
+    ├── hooks/
+    │   └── useSanitizationResults.ts # Derived parse, detection, redaction, and summary state
     ├── data/
     │   └── promptLogData.ts        # Static development prompt log data for PromptLogView
     ├── lib/
@@ -136,6 +138,7 @@ Veiltrace/
 - `CustomTerm`: `{ id, term }`
 - `EntityMeta`: `{ type, label, shortLabel, description, partialExample, pseudonymPrefix }`
 - `ParsedCsvDocument`: `{ rows: string[][], delimiter: string, newline: '\r\n' | '\n' }`
+- `ScanSnapshot`: immutable text/CSV content and source metadata for a completed scan
 - `AppTab`: `'sanitize' | 'how-it-works' | 'prompt-log' | 'about'`
 
 ---
@@ -215,6 +218,10 @@ Veiltrace/
   - Pre-scan / Out-of-date gating: Hides results prior to scan; computes `isOutOfDate` when `rawInput !== scanSnapshot.text` and displays **Scan again**.
   - Step 2: Summary cards, **Temporary custom terms** panel with confirmation status, keyboard-operable mode `radiogroup` (`ArrowLeft`/`ArrowRight`), side-by-side `Highlighted Original` (click-to-inspect details) and shaded `Sanitized Output`, CSV `Table view`/`Raw CSV` toggle, `Copy sanitized output`, `Download sanitized file` (with `URL.revokeObjectURL`), **What Changed** guidance, and collapsible **Review findings**.
 - **`HowItWorksView.tsx`**, **`PromptLogView.tsx`**, **`AboutView.tsx`**: Privacy architecture explanation, truthful prompt history, format matrix, limitations, and Challenge Checklist.
+
+### 5.8 Derived Scan State (`src/hooks/useSanitizationResults.ts`)
+- Owns memoized CSV parsing, detection, redaction output, pseudonym summaries, per-type counts, guidance, filtered findings, and CSV cell grouping.
+- Keeps this processing pipeline separate from the workspace's upload, review, and layout code. `ScanSnapshot` lives in the domain types so components do not import contracts from `App.tsx`.
 
 ---
 
